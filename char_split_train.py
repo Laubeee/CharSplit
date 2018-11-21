@@ -7,6 +7,7 @@ __author__ = 'don.tuggener@gmail.com'
 
 import re
 import sys
+import pickle
 from collections import defaultdict
 
 # Dicts for counting the ngrams
@@ -22,7 +23,7 @@ max_len = 20    # Maximum ngram length
 
 # Gather counts
 print('Words analyzed of max.', str(max_words))
-for line in open(sys.argv[1],'r'):
+for line in open(sys.argv[1], 'r', encoding='utf-8'):
 
     line = line.strip().lower()
     if '-' in line: 
@@ -60,14 +61,5 @@ start_ngrams = {k: v/all_ngrams[k] for k,v in start_ngrams.items() if v > 1}
 end_ngrams = {k: v/all_ngrams[k] for k,v in end_ngrams.items() if v > 1}
 in_ngrams = {k: v/all_ngrams[k] for k,v in in_ngrams.items() if v > 1}
 
-# Write dicts to python file
-with open('ngram_probs.py','w') as f:
-    f.write('prefix=')
-    f.write(str(dict(start_ngrams)))
-    f.write('\n')
-    f.write('infix=')
-    f.write(str(dict(in_ngrams)))
-    f.write('\n')    
-    f.write('suffix=')
-    f.write(str(dict(end_ngrams)))
-    f.write('\n')
+with open('ngram_probs.pickle', 'wb') as f:
+    pickle.dump({'prefix': dict(start_ngrams), 'infix': dict(in_ngrams), 'suffix': dict(end_ngrams)}, f, protocol=pickle.HIGHEST_PROTOCOL)

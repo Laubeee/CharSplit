@@ -2,12 +2,20 @@
 Split German compound words
 """
 
-__author__ = 'don.tuggener@gmail.com'
+__author__ = 'don.tuggener@gmail.com, silvan.laube@fhnw.ch'
 
-import ngram_probs  # trained with char_split_train.py
+import pickle
 import re
 import sys
 
+ngram_probs = None
+
+def init(file: str='ngram_probs.pickle'):
+    global ngram_probs
+    ngram_probs = None  # allows earlier garbage collection if this isn't the first init call
+
+    with open(file, 'rb') as f:
+        ngram_probs = pickle.load(f)
 
 def split_compound(word: str):
     """
@@ -16,6 +24,10 @@ def split_compound(word: str):
     :return: List of all splits
     """
 
+    global ngram_probs
+    if ngram_probs is None:
+        init()
+    
     word = word.lower()
 
     # If there is a hyphen in the word, return part of the word behind the last hyphen
@@ -44,11 +56,11 @@ def split_compound(word: str):
             # Probability of first compound, given by its ending prob
             if pre_slice_prob == [] and k <= len(pre_slice):
                 end_ngram = pre_slice[-k:]  # Look backwards
-                pre_slice_prob.append(ngram_probs.suffix.get(end_ngram, -1))    # Punish unlikely pre_slice end_ngram
+                pre_slice_prob.append(ngram_probs['suffix'].get(end_ngram, -1))    # Punish unlikely pre_slice end_ngram
                     
             # Probability of ngram in word, if high, split unlikely
             in_ngram = word[n:n+k]
-            in_slice_prob.append(ngram_probs.infix.get(in_ngram, 1)) # Favor ngrams not occurring within words
+            in_slice_prob.append(ngram_probs['infix'].get(in_ngram, 1)) # Favor ngrams not occurring within words
                                   
             # Probability of word starting
             if start_slice_prob == []:
@@ -58,7 +70,7 @@ def split_compound(word: str):
                         or ngram.endswith('hls') or ngram.endswith('ns'):
                     if len(ngram[:-1]) > 2:
                         ngram = ngram[:-1] 
-                start_slice_prob.append(ngram_probs.prefix.get(ngram, -1))
+                start_slice_prob.append(ngram_probs['prefix'].get(ngram, -1))
 
         if pre_slice_prob == [] or start_slice_prob == []: continue
         
@@ -74,10 +86,10 @@ def split_compound(word: str):
     return sorted(scores, reverse = True)
 
 
-def germanet_evaluation(print_errors: bool=False):
+def germanet_evaluation(file: str='split_compounds_from_GermaNet13.0.txt', print_errors: bool=False):
     """ Test on GermaNet compounds from http://www.sfs.uni-tuebingen.de/lsd/compounds.shtml """
     cases, correct = 0, 0
-    for line in open('split_compounds_from_GermaNet13.0.txt','r').readlines()[2:]:
+    for line in open(file,'r').readlines()[2:]:
         cases += 1
         sys.stderr.write('\r'+str(cases))
         sys.stderr.flush()
