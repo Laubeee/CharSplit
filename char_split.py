@@ -7,10 +7,14 @@ __author__ = 'don.tuggener@gmail.com, silvan.laube@fhnw.ch'
 import pickle
 import re
 import sys
+import os
 
 ngram_probs = None
 
 def init(file: str='ngram_probs.pickle'):
+    if os.path.dirname(file) == '':
+        file = os.path.join(os.path.dirname(__file__), file)
+    
     global ngram_probs
     ngram_probs = None  # allows earlier garbage collection if this isn't the first init call
 
